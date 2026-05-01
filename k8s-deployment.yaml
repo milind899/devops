@@ -17,6 +17,7 @@ spec:
       containers:
       - name: my-app-container
         image: DOCKER_IMAGE:DOCKER_TAG
+        imagePullPolicy: Never
         ports:
         - containerPort: 3000
         securityContext:

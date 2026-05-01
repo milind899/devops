@@ -1,10 +1,9 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = 'my-docker-registry/healthcare-app'
+        DOCKER_IMAGE = 'healthcare-app'
         DOCKER_TAG = "v${env.BUILD_NUMBER}"
         KUBECONFIG_CREDENTIAL_ID = 'k8s-kubeconfig'
-        DOCKER_CREDENTIAL_ID = 'docker-hub-credentials'
     }
     stages {
         stage('Checkout') {
@@ -28,16 +27,6 @@ pipeline {
         stage('DevSecOps: Container Scan') {
             steps {
                 sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${DOCKER_TAG}"
-            }
-        }
-        stage('Push Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIAL_ID) {
-                        dockerImage.push()
-                        dockerImage.push('latest')
-                    }
-                }
             }
         }
         stage('Deploy Blue-Green') {
