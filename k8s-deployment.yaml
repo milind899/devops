@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-DEPLOYMENT_COLOR
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+      color: DEPLOYMENT_COLOR
+  template:
+    metadata:
+      labels:
+        app: my-app
+        color: DEPLOYMENT_COLOR
+    spec:
+      containers:
+      - name: my-app-container
+        image: DOCKER_IMAGE:DOCKER_TAG
+        ports:
+        - containerPort: 3000
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
