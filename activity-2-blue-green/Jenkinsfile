@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = 'blue-green-app'
+        DOCKER_TAG = "v${env.BUILD_NUMBER}"
+        KUBECONFIG_CREDENTIAL_ID = 'k8s-kubeconfig'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                dir('activity-2-blue-green') {
+                    script {
+                        docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    }
+                }
+            }
+        }
+        stage('Blue-Green Deploy') {
+            steps {
+                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
+                    dir('activity-2-blue-green') {
+                        script {
+                            def activeColor = sh(
+                                script: "kubectl get svc bg-app-service-active -o jsonpath='{.spec.selector.color}' --kubeconfig=\$KUBECONFIG --insecure-skip-tls-verify=true 2>/dev/null || echo 'none'",
+                                returnStdout: true
+                            ).trim()
+
+                            def newColor = (activeColor == 'blue') ? 'green' : 'blue'
+                            def oldColor = activeColor
+
+                            sh "cp k8s-deployment.yaml deploy-${newColor}.yaml"
+                            sh "sed -i 's|DEPLOYMENT_COLOR|${newColor}|g; s|DOCKER_TAG|${DOCKER_TAG}|g' deploy-${newColor}.yaml"
+                            sh "kubectl apply -f deploy-${newColor}.yaml --kubeconfig=\$KUBECONFIG --insecure-skip-tls-verify=true"
+                            sh "kubectl rollout status deployment/bg-app-${newColor} --kubeconfig=\$KUBECONFIG --insecure-skip-tls-verify=true"
+
+                            sh "cp k8s-service-active.yaml active-svc.yaml"
+                            sh "sed -i 's|ACTIVE_COLOR|${newColor}|g' active-svc.yaml"
+                            sh "kubectl apply -f active-svc.yaml --kubeconfig=\$KUBECONFIG --insecure-skip-tls-verify=true"
+
+                            if (oldColor != 'none') {
+                                sh "kubectl scale deployment bg-app-${oldColor} --replicas=0 --kubeconfig=\$KUBECONFIG --insecure-skip-tls-verify=true"
+                            }
+
+                            echo "Traffic switched from [${oldColor}] to [${newColor}]"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

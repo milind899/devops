@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = 'healthcare-devsecops-app'
+        DOCKER_TAG = "v${env.BUILD_NUMBER}"
+        KUBECONFIG_CREDENTIAL_ID = 'k8s-kubeconfig'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('SAST & SCA: npm audit') {
+            steps {
+                dir('activity-3-devsecops') {
+                    sh 'npm install'
+                    sh 'npm audit --audit-level=high || true'
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                dir('activity-3-devsecops') {
+                    script {
+                        docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                        docker.build("${DOCKER_IMAGE}:latest")
+                    }
+                }
+            }
+        }
+        stage('Container Scan: Trivy') {
+            steps {
+                sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
+            }
+        }
+        stage('Deploy Secure App to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
+                    dir('activity-3-devsecops') {
+                        sh "kubectl apply -f k8s-deployment.yaml --kubeconfig=\$KUBECONFIG --insecure-skip-tls-verify=true"
+                        sh "kubectl rollout status deployment/healthcare-app --kubeconfig=\$KUBECONFIG --insecure-skip-tls-verify=true"
+                    }
+                }
+            }
+        }
+    }
+}

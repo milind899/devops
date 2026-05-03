@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bg-app-DEPLOYMENT_COLOR
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bg-app
+      color: DEPLOYMENT_COLOR
+  template:
+    metadata:
+      labels:
+        app: bg-app
+        color: DEPLOYMENT_COLOR
+    spec:
+      containers:
+      - name: bg-app
+        image: blue-green-app:DOCKER_TAG
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DEPLOY_COLOR
+          value: "DEPLOYMENT_COLOR"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
