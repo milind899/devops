@@ -20,5 +20,3 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
     rm -f kubectl
 
 RUN jenkins-plugin-cli --plugins "docker-workflow kubernetes-cli credentials-binding"
-
-USER jenkins
