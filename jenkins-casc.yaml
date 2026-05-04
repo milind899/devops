@@ -1,0 +1,77 @@
+jenkins:
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin123"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  numExecutors: 2
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - file:
+              scope: GLOBAL
+              id: "k8s-kubeconfig"
+              description: "Kubernetes kubeconfig"
+              fileName: "kubeconfig"
+              secretBytes: "${readFileBase64:/var/jenkins_casc/jenkins-kubeconfig}"
+
+jobs:
+  - script: >
+      pipelineJob('Activity-1-CICD-Pipeline') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/milind899/devops.git')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('activity-1-cicd-pipeline/Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
+  - script: >
+      pipelineJob('Activity-2-BlueGreen') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/milind899/devops.git')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('activity-2-blue-green/Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
+  - script: >
+      pipelineJob('Activity-3-DevSecOps') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/milind899/devops.git')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('activity-3-devsecops/Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
