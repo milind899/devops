@@ -67,6 +67,25 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Jenkins: Setup All Jobs",
+            "type": "shell",
+            "command": "powershell -ExecutionPolicy Bypass -File setup-jobs.ps1 -User admin -Password ${input:jenkinsPassword}",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "jenkinsPassword",
+            "type": "promptString",
+            "description": "Jenkins admin password",
+            "password": true
         }
     ]
 }

@@ -1,11 +1,7 @@
 import jenkins.model.*
-import hudson.util.Secret
 import com.cloudbees.plugins.credentials.*
 import com.cloudbees.plugins.credentials.domains.*
 import org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl
-import org.apache.commons.fileupload.FileItem
-import hudson.FilePath
-import java.nio.file.Files
 
 def jenkins = Jenkins.get()
 
